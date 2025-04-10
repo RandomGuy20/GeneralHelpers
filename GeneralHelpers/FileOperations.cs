@@ -62,7 +62,12 @@ namespace GeneralHelpers
 
                 if(CrestronEnvironment.DevicePlatform == eDevicePlatform.Appliance)
                 {
-                     dir += subDirectory;
+
+                    if (!dir.Contains(subDirectory))
+                    {
+                        dir += subDirectory;
+                    }
+                     
 
                      if (!Directory.Exists(dir))
                          Directory.CreateDirectory(dir);
@@ -76,7 +81,7 @@ namespace GeneralHelpers
                          fileLocation = dir + "\\" + filename;
                      }
                      
-                     SendDebug("The directory and filepath to the file is: " + fileLocation); 
+                     CrestronConsole.PrintLine("The directory and filepath to the file is: " + fileLocation); 
 
                 }
                 else

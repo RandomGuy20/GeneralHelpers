@@ -92,7 +92,7 @@ namespace GeneralHelpers
         /// <param name="newRange"></param>
         /// <param name="currentlevel"></param>
         /// <returns></returns>
-        public static int ScaleValueDown(int oldRange, int newRange, int currentlevel)
+        public static double ScaleValueDown(int oldRange, int newRange, int currentlevel)
         {
             return (currentlevel * newRange) / oldRange;
         }
