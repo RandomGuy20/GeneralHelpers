@@ -85,6 +85,9 @@
     <Compile Include="BasicSecurity\BasicPasswordWithBackdoor.cs" />
     <Compile Include="BasicSecurity\Data\BasicSecurityFormatting.cs" />
     <Compile Include="CommandBuilder.cs" />
+    <Compile Include="CustomSmartObjectJson\JSONReader.cs" />
+    <Compile Include="CustomSmartObjectJson\SOJSONContainer.cs" />
+    <Compile Include="CustomSmartObjectJson\StaticMicJSONObject.cs" />
     <Compile Include="DataParsing.cs" />
     <Compile Include="Debugging\Debugging.cs" />
     <Compile Include="EventScheduling\EventData.cs" />
@@ -92,6 +95,16 @@
     <Compile Include="FileChangeMonitor.cs" />
     <Compile Include="FileOperations.cs" />
     <Compile Include="GeneralMaths.cs" />
+    <Compile Include="IPCommunications\IIpCommunications.cs" />
+    <Compile Include="IPCommunications\IpCommunicationsBase.cs" />
+    <Compile Include="IPCommunications\ISecurityBase.cs" />
+    <Compile Include="IPCommunications\SSH\SSHClient.cs" />
+    <Compile Include="IPCommunications\TCP\TCPIPClient.cs" />
+    <Compile Include="IPCommunications\TCP\TCPIPServer.cs" />
+    <Compile Include="IPCommunications\Telnet\TelnetClient.cs" />
+    <Compile Include="IPCommunications\UDP\UDPClient.cs" />
+    <Compile Include="IPCommunications\UDP\WakeOnLan.cs" />
+    <Compile Include="IPCommunications\WebSockets\WebSocket.cs" />
     <Compile Include="JTimer.cs" />
     <Compile Include="NVX-Tracking\USBRouting.cs" />
     <Compile Include="PowerTimers\DevicePowerController.cs" />

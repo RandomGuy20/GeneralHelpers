@@ -70,7 +70,7 @@ namespace GeneralHelpers
                      
 
                      if (!Directory.Exists(dir))
-                         Directory.CreateDirectory(dir);
+                        Directory.CreateDirectory(dir);
 
                      if (subDirectory.EndsWith("\\"))
                      {
@@ -332,6 +332,7 @@ namespace GeneralHelpers
         {
             try
             {
+                CrestronConsole.PrintLine($"attempting to read file at {fileLocation}");
                 if (FileExists(fileLocation))
                 {
                     fileData = File.ReadAllText(fileLocation);
