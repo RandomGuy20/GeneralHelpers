@@ -102,37 +102,33 @@ namespace GeneralHelpers
             try
             {
 
-                fileLocation = FileLocation;
-
-                fileOps = new FileOperations(fileLocation,"User");
-                fileOps.onFileChange += FileOps_onFileChange;
-                if (fileOps.FileExists(FileLocation))
+                Task.Run(async () =>
                 {
-                    ReadFromFile(FileLocation);
-                }
-                else
-                {
-                    data = fileData.ToString().Split('\n').Select(line => line.Replace("\n", "")).ToList();
-                    if (data[data.Count - 1].Equals("\n"))
-                        data.RemoveAt(data.Count - 1);
+                    fileLocation = FileLocation;
 
-                    WriteToFile(data, fileLocation);
-                    Thread.Sleep(2000);
-                    ReadFromFile(FileLocation);
-                }
+                    fileOps = new FileOperations(fileLocation, "User");
+                    fileOps.onFileChange += FileOps_onFileChange;
+                    Task.Delay(5000).Wait();
+                    if (fileOps.FileExists(fileOps.FullFilePath))
+                    {
+                        CrestronConsole.PrintLine("\nSIMPL File Exists, Reading from file: " + FileLocation);
+                        ReadFromFile(FileLocation);
+                    }
+                    else
+                    {
+                        CrestronConsole.PrintLine("\nSIMPL File does not exist, creating file: " + FileLocation);
+                        data = fileData.ToString().Split('\n').Select(line => line.Replace("\n", "")).ToList();
+                        if (data[data.Count - 1].Equals("\n"))
+                            data.RemoveAt(data.Count - 1);
+
+                        WriteToFile(data, fileLocation);
+                        Thread.Sleep(2000);
+                        ReadFromFile(FileLocation);
+                    }
+                });
 
 
-
-               /* if (monitor == null)
-                {
-                    monitor = new FileChangeMonitor(FileLocation, 10);
-                    monitor.onFileChanged += Monitor_onFileChanged;
-                    monitor.Start();
-                }*/
-
-                isInit = true;
-
-                
+                isInit = true;                
 
             }
             catch (Exception e)

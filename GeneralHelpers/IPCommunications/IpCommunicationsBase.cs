@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace GeneralHelpers.IPCommunications
 {
-    internal abstract class AIpCommunicationsBase
+    public abstract class AIpCommunicationsBase
     {
 
 

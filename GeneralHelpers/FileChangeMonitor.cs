@@ -109,8 +109,9 @@ namespace GeneralHelpers
 
                 if (!String.Equals(currentHash, newHash, StringComparison.OrdinalIgnoreCase))
                 {
+                    CrestronConsole.PrintLine("The Hash Set Changed");
                     currentHash = newHash;
-                    onFileChanged();
+                    onFileChanged?.Invoke();
                 }
             }
             catch (Exception e)
@@ -129,6 +130,9 @@ namespace GeneralHelpers
         {
             try
             {
+                if (!File.Exists(filePath))
+                    return "";
+
                 using (var md5 = new MD5CryptoServiceProvider())
                 {
                     byte[] bytes = Encoding.ASCII.GetBytes(File.ReadToEnd(filePath, Encoding.ASCII));

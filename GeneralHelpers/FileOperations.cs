@@ -80,6 +80,10 @@ namespace GeneralHelpers
                      {
                          fileLocation = dir + "\\" + filename;
                      }
+
+
+
+
                      
                      CrestronConsole.PrintLine("The directory and filepath to the file is: " + fileLocation); 
 
@@ -105,7 +109,8 @@ namespace GeneralHelpers
 
         private void Monitor_onFileChanged()
         {
-            onFileChange();
+            CrestronConsole.PrintLine("File Change Detected at: " + fileLocation);
+            onFileChange?.Invoke();
         }
 
         #endregion
@@ -131,11 +136,18 @@ namespace GeneralHelpers
                {
                    await Task.Delay(1000);
 
-                   if (monitor == null && FileExists(fileLocation))
+
+                   if (FileExists(fileLocation))
                    {
-                       monitor = new FileChangeMonitor(fileLocation, 1000);
-                       monitor.onFileChanged += Monitor_onFileChanged;
-                       monitor.Start();
+                       CrestronConsole.PrintLine("File Location Exists starting monitor");
+                       if(monitor == null)
+                       {
+                           monitor = new FileChangeMonitor(fileLocation, 1);
+                           monitor.onFileChanged += Monitor_onFileChanged;
+                           monitor.Start();
+                           CrestronConsole.PrintLine("Subscribed to file change");
+                       }
+
                    }
                });
 
@@ -157,8 +169,11 @@ namespace GeneralHelpers
         /// <returns></returns>
         public bool FileExists(string fileName)
         {
-            return File.Exists(fileLocation); 
+            
+            return File.Exists(fileName); 
         }
+
+        public string FullFilePath => fileLocation;
 
         /// <summary>
         /// Write to file 
@@ -199,7 +214,7 @@ namespace GeneralHelpers
                         sw.Write(fileData);
                     }
 
-
+                    InstantiateFileMonitor();
                     return true;
                 }
                 //File doesnt exist
@@ -211,6 +226,7 @@ namespace GeneralHelpers
                     {
                         sw.Write(fileData);
                     }
+
                     InstantiateFileMonitor();
                     return true;
 
@@ -305,6 +321,7 @@ namespace GeneralHelpers
                 {
                     var lines = File.ReadAllLines(fileLocation);
                     fileData = lines.ToList();
+                    InstantiateFileMonitor();
                     return true;
                 }
                 else
@@ -336,6 +353,7 @@ namespace GeneralHelpers
                 if (FileExists(fileLocation))
                 {
                     fileData = File.ReadAllText(fileLocation);
+                    InstantiateFileMonitor();
                     return true;
                 }
                 else
@@ -368,8 +386,13 @@ namespace GeneralHelpers
                 {
                     File.Delete(fileLocation);
                     val = FileExists(fileLocation) ? -1 : 1;
-                    monitor.Stop();
-                    monitor.Dispose();
+                    if (monitor != null)
+                    {
+                        monitor.Stop();
+                        monitor.Dispose();
+                        monitor = null;
+                    }
+
                 }
                 else
                     val = 0;

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace GeneralHelpers.IPCommunications.TCP
 {
-    internal class TCPIPClient: AIpCommunicationsBase
+    public class TCPIPClient: AIpCommunicationsBase
     {
 
         #region Fields
