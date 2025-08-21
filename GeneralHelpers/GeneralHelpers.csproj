@@ -84,17 +84,15 @@
     <Compile Include="BasicSecurity\BasicPasswordSIMPL.cs" />
     <Compile Include="BasicSecurity\BasicPasswordWithBackdoor.cs" />
     <Compile Include="BasicSecurity\Data\BasicSecurityFormatting.cs" />
-    <Compile Include="CommandBuilder.cs" />
     <Compile Include="CustomSmartObjectJson\JSONReader.cs" />
     <Compile Include="CustomSmartObjectJson\SOJSONContainer.cs" />
     <Compile Include="CustomSmartObjectJson\StaticMicJSONObject.cs" />
-    <Compile Include="DataParsing.cs" />
     <Compile Include="Debugging\Debugging.cs" />
-    <Compile Include="EventScheduling\EventData.cs" />
-    <Compile Include="EventScheduling\EventScheduler.cs" />
-    <Compile Include="FileChangeMonitor.cs" />
-    <Compile Include="FileOperations.cs" />
-    <Compile Include="GeneralMaths.cs" />
+    <Compile Include="Scheduling\EventData.cs" />
+    <Compile Include="Scheduling\EventScheduler.cs" />
+    <Compile Include="FileRelatedOperations\FileChangeMonitor.cs" />
+    <Compile Include="FileRelatedOperations\FileOperations.cs" />
+    <Compile Include="Mathematics\GeneralMaths.cs" />
     <Compile Include="IPCommunications\IIpCommunications.cs" />
     <Compile Include="IPCommunications\IpCommunicationsBase.cs" />
     <Compile Include="IPCommunications\ISecurityBase.cs" />
@@ -105,15 +103,13 @@
     <Compile Include="IPCommunications\UDP\UDPClient.cs" />
     <Compile Include="IPCommunications\UDP\WakeOnLan.cs" />
     <Compile Include="IPCommunications\WebSockets\WebSocket.cs" />
-    <Compile Include="JTimer.cs" />
+    <Compile Include="Timers\JTimer.cs" />
     <Compile Include="NVX-Tracking\USBRouting.cs" />
     <Compile Include="PowerTimers\DevicePowerController.cs" />
     <Compile Include="PowerTimers\ShutdownTimer.cs" />
-    <Compile Include="ProgramDifferences.cs" />
+    <Compile Include="ProgramData\ProgramDifferences.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ReadWriteFileSIMPL.cs" />
-    <Compile Include="Scheduling\ScheduleData.cs" />
-    <Compile Include="Scheduling\Scheduler.cs" />
+    <Compile Include="FileRelatedOperations\ReadWriteFileSIMPL.cs" />
     <Compile Include="Scheduling\SchedulerSIMPL.cs" />
   </ItemGroup>
   <ItemGroup>

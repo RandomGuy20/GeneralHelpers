@@ -13,29 +13,6 @@ namespace GeneralHelpers.IPCommunications
 {
     public abstract class AIpCommunicationsBase
     {
-
-
-        //TCP Fields -- Ip Address, connected, port, autoreconnect,Debug,
-        //UDP Fields -- Ipaddress, port, bufferSize,Debug, isInitialized, isEnabled
-        //WakeOnLan Fields -- macaddress, ip address, port, ethernetadaptertype, 
-        //Telnet Fields -- buffersize, port, ipaddress,username,password,connected,autoreconnect,
-        // SSH Fields -- initialized, username, ipaddress, password, connected, 
-
-        //TCp methods -- Connect, Disconnect, Send Data(byte), senddata(string) , Dispose
-        // UDP methods --- Enable UDp, Disable UDP, Send Bytes, Send String, Dispose, 
-        // Wake On lan Methods -- sendpakcte, dispose
-        //Telnet Methods --- connect, disconnect, send data(byte), send data(string), dispose
-        //SSh Methods -- connect, disconnect, send data(byte), send data(string), dispose
-
-
-        // TCP events - Connection state, datareceived
-        //UDp events -- datareceived, udp enabled
-        //Wake On Lan Events -- wakeonlan
-        //Tenet events --data received, connection state
-        //SSh events -- connection state, data received
-
-
-
         #region Fields
 
         internal TCPClient tcpClient;

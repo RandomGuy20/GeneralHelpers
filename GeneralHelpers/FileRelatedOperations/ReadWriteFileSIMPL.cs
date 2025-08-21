@@ -102,7 +102,7 @@ namespace GeneralHelpers
             try
             {
 
-                Task.Run(async () =>
+                Task.Run(() =>
                 {
                     fileLocation = FileLocation;
 
