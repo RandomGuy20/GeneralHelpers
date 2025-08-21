@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace GeneralHelpers.IPCommunications
 {
-    internal class UDPClient: AIpCommunicationsBase
+    public class UDPClient: AIpCommunicationsBase
     {
         #region Fields
 

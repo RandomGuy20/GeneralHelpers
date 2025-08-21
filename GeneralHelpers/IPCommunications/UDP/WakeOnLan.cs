@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace GeneralHelpers.IPCommunications.UDP
 {
-    internal class WakeOnLan
+    public class WakeOnLan
     {
         #region Fields
 
