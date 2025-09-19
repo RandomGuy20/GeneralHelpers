@@ -86,9 +86,9 @@ namespace GeneralHelpers.IPCommunications
 
         #region Events
 
-        public StatusChangedEventHandler onStatusChangeEvent;
+        public event StatusChangedEventHandler onStatusChangeEvent;
 
-        public IncomingDataEventHandler onDataReceivedEvent;
+        public event IncomingDataEventHandler onDataReceivedEvent;
 
         #endregion
 

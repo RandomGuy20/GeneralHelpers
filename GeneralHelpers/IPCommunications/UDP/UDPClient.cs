@@ -62,7 +62,7 @@ namespace GeneralHelpers.IPCommunications
         {
             try
             {
-                onDataReceivedEvent?.Invoke(this,
+                SendDataReceivedEvent(this,
                     Encoding.UTF8.GetString(server.IncomingDataBuffer,0,numberOfBytesReceived), server.IncomingDataBuffer);
             }
             catch (Exception e)
