@@ -459,7 +459,7 @@ namespace GeneralHelpers.EventScheduling
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 };
 
-                if (fileOps.WriteToFile(JsonConvert.SerializeObject(eventList, settings),  true))
+                if (fileOps.WriteToFile(JsonConvert.SerializeObject(eventList,Formatting.None,settings),  true))
                 {
                     SendDebug("EventScheduler Wrote to file");
                     //onScheduleSave(true);

@@ -9,24 +9,74 @@ using System.Threading.Tasks;
 
 namespace GeneralHelpers.IPCommunications.TCP
 {
-    public class TCPIPClient: AIpCommunicationsBase
+    public class TCPIPClient
     {
 
         #region Fields
+
+        internal TCPClient tcpClient;
+
+        internal string ipAddress;
+        internal string lastSent;
+        internal string userName;
+        internal string password;
+        internal string url;
+
+        internal int port;
+        internal int bufferSize;
+        internal int maxConnections = 10;
+
+        internal bool isConnected = false;
+        internal bool isReconnect;
+
+        internal object sender;
+
+        internal JTimer statusCheck;
+        internal SocketErrorCodes errorCodes;
+
 
         #endregion
 
         #region Properties
 
+        public string IpAddress
+        {
+            get => ipAddress;
+            set => IPAddressChange(value);
+        }
+        public int Port
+        {
+            get => port;
+            set => IpPortChange(value);
+        }
+
+        public bool IsConnected => isConnected;
+
+        public bool AutoReconnect
+        {
+            get => isReconnect;
+            set => isReconnect = value;
+        }
+
+
+
+        public bool Debug { get; set; } = false;
 
         #endregion
 
         #region Delegates
 
+        public delegate void StatusChangedEventHandler(object sender, string statusMessage, bool ConnectionState);
+
+        public delegate void IncomingDataEventHandler(object sender, string sData, byte[] bData);
 
         #endregion
 
         #region Events
+
+        public event StatusChangedEventHandler onStatusChangeEvent;
+
+        public event IncomingDataEventHandler onDataReceivedEvent;
 
         #endregion
 
@@ -54,25 +104,57 @@ namespace GeneralHelpers.IPCommunications.TCP
             tcpClient = new TCPClient(IpAddress, Port, BufferSize);
             tcpClient.SocketStatusChange += TcpClient_SocketStatusChange;
             
-            
+        }
+
+        private void TcpClient_SocketStatusChange(TCPClient myTCPClient, SocketStatus clientSocketStatus)
+        {
+            isConnected = clientSocketStatus == SocketStatus.SOCKET_STATUS_CONNECTED;
+
+            SendStatusChangeEvent(this, myTCPClient.ClientStatus.ToString(), IsConnected);
+            //if (isConnected)
+            //{
+                int dataAsync = (int)myTCPClient.ReceiveDataAsync(DataReceivedCallback);
+            //}
         }
 
         #endregion
 
         #region Internal Methods
 
-        //private void ConnectionStateCallback(TCPClient _tcpClient)
-        //{
-        //    isConnected = tcpClient.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED;
+        internal void SendDataReceivedEvent(object sender, string sData, byte[] bData)
+        {
+            onDataReceivedEvent?.Invoke(sender, sData, bData);
+        }
 
-        //    SendStatusChangeEvent(this, tcpClient.ClientStatus.ToString(), IsConnected);
+        internal void IPAddressChange(string newIpAddress)
+        {
+            Disconnect();
+            ipAddress = newIpAddress;
+        }
 
-        //    if (tcpClient.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
-        //    {
-        //        int dataAsync = (int)tcpClient.ReceiveDataAsync(DataReceivedCallback);
-        //    }
-                
-        //}
+        internal void IpPortChange(int newPort)
+        {
+            Disconnect();
+            port = newPort;
+        }
+
+        internal void SendStatusChangeEvent(object sender, string statusMessage, bool connectionState)
+        {
+            onStatusChangeEvent?.Invoke(sender, statusMessage, connectionState);
+        }
+
+        private void ConnectionStateCallback(TCPClient _tcpClient)
+        {
+            isConnected = _tcpClient.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED;
+
+            SendStatusChangeEvent(this, _tcpClient.ClientStatus.ToString(), isConnected);
+
+            //if (tcpClient.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
+            //{
+                int dataAsync = (int)_tcpClient.ReceiveDataAsync(DataReceivedCallback);
+            //}
+
+        }
 
         private void StatusCheck(object obj)
         {
@@ -80,40 +162,49 @@ namespace GeneralHelpers.IPCommunications.TCP
                 Connect();
         }
 
-        //private void DataReceivedCallback(TCPClient _tcpClient, int bytes)
-        //{
-        //    if (bytes <= 0)
-        //        return;
+        private void DataReceivedCallback(TCPClient _tcpClient, int bytes)
+        {
+            //if (bytes <= 0)
+            //    return;
 
-        //    SendDataReceivedEvent(this, Encoding.UTF8.GetString(tcpClient.IncomingDataBuffer, 0, bytes), tcpClient.IncomingDataBuffer);
-        //}
+           // CrestronConsole.PrintLine($"Received {bytes} bytes from server.");
+
+            SendDataReceivedEvent(this, Encoding.UTF8.GetString(_tcpClient.IncomingDataBuffer, 0, bytes), tcpClient.IncomingDataBuffer);
+            int dataAsync = (int)_tcpClient.ReceiveDataAsync(DataReceivedCallback);
+        }
 
 
-
-
+        internal void SendDataCallback(TCPClient tcpClient, int bytes)
+        {
+            SendDebug($"TCP Data Sent was: {lastSent} ");
+        }
+        internal void SendDebug(string data)
+        {
+            if (Debug)
+            {
+                CrestronConsole.PrintLine($"\nTCP Client Debug Message is: {data}");
+                ErrorLog.Error($"\nTCP Client Debug Message is: {data}");
+            }
+        }
 
         #endregion
 
         #region Public Methods
 
-        public override void Connect()
+        public void Connect()
         {
             if (isConnected)
                 return;
 
 
-            if (statusCheck != null)
-            {
-                statusCheck.IsRunning = false;
-                statusCheck.Dispose();
-            }
+            if (statusCheck == null)
+                statusCheck = new JTimer(StatusCheck, 500, 500);
 
             int clientAsync = (int) tcpClient.ConnectToServerAsync(ConnectionStateCallback);
 
-            statusCheck = new JTimer(StatusCheck, 500, 500);
-        }
 
-        public override void Disconnect()
+        }
+        public void Disconnect()
         {
             if (!isConnected)
                 return;
@@ -122,26 +213,23 @@ namespace GeneralHelpers.IPCommunications.TCP
             statusCheck.IsRunning = false;
             statusCheck.Dispose();
         }
+        public void SendData(string data)
+        {
+            if (data.Length <= 0 || data == null)
+                return;
 
-        //public override void SendData(string data)
-        //{
-        //    if (data.Length <= 0 || data == null)
-        //        return;
-
-        //    byte[] bytes = Encoding.ASCII.GetBytes(data);
-        //    lastSent = data;
-        //    errorCodes = tcpClient.SendDataAsync(bytes,bytes.Length, SendDataCallback);
-        //}
-
-        //public override void SendData(byte[] data)
-        //{
-        //    if (data == null || data.Length == 0)
-        //        return;
-        //    lastSent = Encoding.ASCII.GetString(data);
-        //    errorCodes = tcpClient.SendDataAsync(data, data.Length, SendDataCallback);
-        //}
-
-        public override void Dispose()
+            byte[] bytes = Encoding.ASCII.GetBytes(data);
+            lastSent = data;
+            errorCodes = tcpClient.SendDataAsync(bytes, bytes.Length, SendDataCallback);
+        }
+        public void SendData(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+                return;
+            lastSent = Encoding.ASCII.GetString(data);
+            errorCodes = tcpClient.SendDataAsync(data, data.Length, SendDataCallback);
+        }
+        public  void Dispose()
         {
             tcpClient.Dispose();
         }

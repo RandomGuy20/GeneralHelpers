@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 
 namespace GeneralHelpers.IPCommunications.Telnet
 {
-    internal class TelnetClient:AIpCommunicationsBase, ISecurityBase
+
+    public class TelnetClient:AIpCommunicationsBase, ISecurityBase
     {
         #region Fields
 
@@ -16,9 +17,9 @@ namespace GeneralHelpers.IPCommunications.Telnet
 
         private bool loggedIN;
 
+        
 
-
-
+        
 
         #endregion
 
@@ -68,6 +69,7 @@ namespace GeneralHelpers.IPCommunications.Telnet
             isReconnect = Reconnect;
             tcpClient = new TCPClient(IpAddress, port, bufferSize);
             tcpClient.SocketStatusChange += TcpClient_SocketStatusChange;
+ 
         }
 
 
@@ -95,37 +97,31 @@ namespace GeneralHelpers.IPCommunications.Telnet
         internal override void DataReceivedCallback(TCPClient _tcpClient, int bytes)
         {
             string lower = Encoding.UTF8.GetString(tcpClient.IncomingDataBuffer, 0, bytes).ToLower();
+            SendDebug($"Incoming TelnetDataReceivgedCallback is {lower}");
 
             if (string.IsNullOrEmpty(lower))
                 return;
 
-            if (lower.Contains("login:"))
+
+
+
+            var actionMap = new Dictionary<Func<string, bool>, Action>()
             {
-                SendData(userName + "\r\n");
-                return;
-            }
-            else if (lower.Contains("password:"))
+                {s => s.Contains("login:"),() => SendData(userName + "\r\n") },
+                {s => s.Contains("password:"),() => SendData(password + "\r\n") },
+                {s => s.Contains("logout"),( ) => HandleLoginStatusChange(false) },
+                {s => s.Contains(loginFlag),() => HandleLoginStatusChange(true) },
+                {s => s.Length > 0,() => SendDataReceivedEvent(this,lower, null)},
+            };
+
+
+            foreach (var action in actionMap)
             {
-                SendData(password + "\r\n");
-                return;
-            }
-            else if (lower.Contains("logout"))
-            {
-                loggedIN = false;
-                onTelnetClientLoggedIn?.Invoke(loggedIN);
-                if (isReconnect)
-                    Connect();
-                return;
-            }
-            else if (lower.Contains(loginFlag))
-            {
-                loggedIN = true;
-                onTelnetClientLoggedIn?.Invoke(loggedIN);
-                return;
-            }
-            else if(lower.Length > 0)
-            {
-                SendDataReceivedEvent(this,lower, null);
+                if (action.Key(lower))
+                {
+                    action.Value.Invoke();
+                    return;
+                }
             }
         }
 
@@ -134,6 +130,17 @@ namespace GeneralHelpers.IPCommunications.Telnet
         {
             if (tcpClient.ClientStatus != SocketStatus.SOCKET_STATUS_CONNECTED && isReconnect)
                 Connect();
+        }
+
+        private void HandleLoginStatusChange(bool state)
+        {
+            loggedIN = state;
+           
+            if (isReconnect && !state)
+                Connect();
+
+
+            onTelnetClientLoggedIn?.Invoke(loggedIN);
         }
 
         #endregion
@@ -161,10 +168,7 @@ namespace GeneralHelpers.IPCommunications.Telnet
         {
             tcpClient.DisconnectFromServer();
         }
-
-
-
-
+        
 
         public override void Dispose()
         {

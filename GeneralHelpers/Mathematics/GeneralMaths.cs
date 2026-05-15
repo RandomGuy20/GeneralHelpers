@@ -105,5 +105,13 @@ namespace GeneralHelpers
             double scale = (double)(newHigh - newLow) / (originalHigh - originalLow);
             return (newLow + ((conversionValue - originalLow) * scale));
         }
+
+        public static double CoonvertRange(double originalLow, double originalHigh, double newLow, double newHigh, double conversionValue )
+        {
+            double scale = (newHigh - newLow) / (originalHigh - originalLow);
+            return (newLow + ((conversionValue - originalLow) * scale));
+        }
+
+
     }
 }

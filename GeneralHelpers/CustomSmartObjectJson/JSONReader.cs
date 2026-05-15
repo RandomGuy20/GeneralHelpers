@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
 using System.Threading.Tasks;
 using Crestron.SimplSharp;
 using Newtonsoft.Json.Linq;
+
+
 
 namespace GeneralHelpers.CustomSmartObjectJson
 {
@@ -83,6 +86,8 @@ namespace GeneralHelpers.CustomSmartObjectJson
             try
             {
                 JObject jsonObject = JObject.Parse(dataIn.ToString());
+
+
 
 
                 for (int i = 0; i < _valuesToGet.Length; i++)

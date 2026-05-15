@@ -138,7 +138,7 @@ namespace GeneralHelpers.PowerTimers
 
                         }
                         if (!token.Token.IsCancellationRequested && setState)
-                            OnCommandToSend(cmd);
+                            OnCommandToSend?.Invoke(cmd);
 
                     });
 
@@ -152,7 +152,7 @@ namespace GeneralHelpers.PowerTimers
 
                         }
                         if (!token.Token.IsCancellationRequested && !setState)
-                            OnCommandToSend(cmd);
+                            OnCommandToSend?.Invoke(cmd);
                     });
 
                 }
@@ -168,7 +168,7 @@ namespace GeneralHelpers.PowerTimers
         private void WarmingCallbackTimer(object obj)
         {
             IsWarming = false;
-            OnDisplayTimerChange(IsWarming, IsCooling);
+            OnDisplayTimerChange?.Invoke(IsWarming, IsCooling);
 
             warmingTimer.Stop();
             warmingTimer.Dispose();
@@ -177,7 +177,7 @@ namespace GeneralHelpers.PowerTimers
         private void CoolingCallbackTimer(object obj)
         {
             IsCooling = false;
-            OnDisplayTimerChange(IsWarming, IsCooling);
+            OnDisplayTimerChange?.Invoke(IsWarming, IsCooling);
 
             coolingTimer.Stop();
             coolingTimer.Dispose();
@@ -196,38 +196,42 @@ namespace GeneralHelpers.PowerTimers
         {
             try
             {
-                if(isPower != state)
+                if (isPower == state)
+                    return;
+
+
+                IsWarming = false;
+                IsCooling = false;
+                isPower = state;
+                if (isPower)
                 {
-                    isPower = state;
-                    if (isPower)
+                    if (warmingTimer != null)
                     {
-                        if (warmingTimer != null)
-                        {
-                            warmingTimer.Stop();
-                            warmingTimer.Dispose();
-                        }
-
-                        warmingTimer = new JTimer(WarmingCallbackTimer, 0, warmingTime);
-                        IsWarming = true;
-                        isPower = true;
-
-                    }
-                    else
-                    {
-                        if (coolingTimer != null)
-                        {
-                            coolingTimer.Stop();
-                            coolingTimer.Dispose();
-                        }
-
-                        coolingTimer = new JTimer(CoolingCallbackTimer, 0, coolingTime);
-                        IsCooling = true;
-                        isPower = false;
-
+                        warmingTimer.Stop();
+                        warmingTimer.Dispose();
                     }
 
-                    OnDisplayTimerChange(IsWarming, IsCooling);
+                    warmingTimer = new JTimer(WarmingCallbackTimer, 0, warmingTime);
+                    IsWarming = true;
+                    isPower = true;
+
                 }
+                else
+                {
+                    if (coolingTimer != null)
+                    {
+                        coolingTimer.Stop();
+                        coolingTimer.Dispose();
+                    }
+
+                    coolingTimer = new JTimer(CoolingCallbackTimer, 0, coolingTime);
+                    IsCooling = true;
+                    isPower = false;
+
+                }
+
+                OnDisplayTimerChange?.Invoke(IsWarming, IsCooling);
+
 
 
             }
@@ -246,11 +250,14 @@ namespace GeneralHelpers.PowerTimers
         {
             try
             {
-                if (state != isPower)
-                {
-                    cmd = (eDisplayCommandToFire)Convert.ToInt32(state);
-                    await ChangePower(state);
-                }
+
+                if (state == isPower)
+                    return;
+
+
+                cmd = (eDisplayCommandToFire)Convert.ToInt32(state);
+                await ChangePower(state);
+
             }
             catch (Exception e)
             {

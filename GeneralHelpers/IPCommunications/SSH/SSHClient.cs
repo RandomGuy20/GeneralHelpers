@@ -3,13 +3,14 @@ using Crestron.SimplSharp.Ssh;
 using Crestron.SimplSharp.Ssh.Common;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace GeneralHelpers.IPCommunications.SSH
 {
-    internal class SSHClient: AIpCommunicationsBase, ISecurityBase
+    public class SSHClient: ISecurityBase
     {
         #region Fields
 
@@ -17,7 +18,8 @@ namespace GeneralHelpers.IPCommunications.SSH
 
         private bool loggedIN;
 
-
+        internal SshClient sshClient;
+        internal ShellStream sshShellStream;
 
         private KeyboardInteractiveAuthenticationMethod authMethod;
         private ConnectionInfo connectInfo;
@@ -25,16 +27,18 @@ namespace GeneralHelpers.IPCommunications.SSH
         private CTimer connState;
 
 
+        private string userName, password;
+        private string ipAddress;
 
-
-
-
+        private bool isConnected, isReconnect = false;
 
 
 
         #endregion
 
         #region Properties
+
+        public bool Debug { get; set; } = false;
 
         public string UserName
         {
@@ -45,23 +49,41 @@ namespace GeneralHelpers.IPCommunications.SSH
 
         public string Password
         {
-            get => userName;
+            get => password;
             set => SetPassword(value);
 
         }
 
+        public bool IsConnected => isConnected;
+
+        public bool AutoReconnect
+        {
+            get => isReconnect;
+            set => isReconnect = value;
+        }
+
+        public string IpAddress
+        {
+            get => ipAddress;
+            set => SetIpAddress(value);
+            
+        }    
 
         #endregion
 
         #region Delegates
 
+        public delegate void StatusChangedEventHandler(object sender, string statusMessage, bool ConnectionState);
 
+        public delegate void IncomingDataEventHandler(object sender, string sData, byte[] bData);
 
         #endregion
 
         #region Events
 
+        public event StatusChangedEventHandler onStatusChangeEvent;
 
+        public event IncomingDataEventHandler onDataReceivedEvent;
 
         #endregion
 
@@ -86,6 +108,7 @@ namespace GeneralHelpers.IPCommunications.SSH
 
             connState = new CTimer((object obj) =>
             {
+                isConnected = sshClient.IsConnected;
                 SendStatusChangeEvent(this, sshClient.IsConnected ? "Connected" : "Not Connected", sshClient.IsConnected);
             }, null, 100, 100);
         }
@@ -97,6 +120,38 @@ namespace GeneralHelpers.IPCommunications.SSH
         #endregion
 
         #region Internal Methods
+
+        internal void SetUserName(string user)
+        {
+            if (string.IsNullOrEmpty(userName))
+                return;
+            userName = user;
+        }
+
+        internal void SetPassword(string pass)
+        {
+            if (string.IsNullOrEmpty(password))
+                return;
+            password = pass;
+        }
+
+        internal void SetIpAddress(string IpAddress)
+        {
+            if (string.IsNullOrEmpty(ipAddress))
+                return;
+
+            ipAddress = IpAddress;
+        }
+
+        internal void SendStatusChangeEvent(object sender, string statusMessage, bool connectionState)
+        {
+            onStatusChangeEvent?.Invoke(sender, statusMessage, connectionState);
+        }
+
+        internal void SendDataReceivedEvent(object sender, string sData, byte[] bData)
+        {
+            onDataReceivedEvent?.Invoke(sender, sData, bData);
+        }
 
         private void SshClient_HostKeyReceived(object sender, Crestron.SimplSharp.Ssh.Common.HostKeyEventArgs e)
         {
@@ -115,38 +170,66 @@ namespace GeneralHelpers.IPCommunications.SSH
                 item.Response = password;
         }
 
+
+        internal void SendDebug(string data)
+        {
+            if (Debug)
+            {
+                CrestronConsole.PrintLine($"\nTCP Client Debug Message is: {data}");
+                ErrorLog.Error($"\nTCP Client Debug Message is: {data}");
+            }
+        }
+
         #endregion
 
         #region Public Methods
 
-        public override void Connect()
+        public void Connect()
         {
-            if(sshClient.IsConnected)
-                return;
-
             try
             {
+                Disconnect();
+
+
+                CrestronEnvironment.Sleep(100);
                 sshClient.Connect();
-                
+                sshShellStream = sshClient.CreateShellStream("xterm", 80, 24, 800,
+                    600, 1024);
+
+                CrestronConsole.PrintLine($"SSh Client trying to connect to IP address {ipAddress}");
+                sshShellStream.DataReceived += SshShellStream_DataReceived;
+                sshShellStream.ErrorOccurred += SshShellStream_ErrorOccurred;
+                CrestronEnvironment.Sleep(100);
+
+                sshShellStream.Write("\n");
+                sshShellStream.Flush();
             }
             catch (SshConnectionException e)
             {
                 SendDebug($"Error in SSHClient Connect is {e}");
             }
 
-            sshShellStream = sshClient.CreateShellStream("terminal", 80U, 24U, 800U,
-                600U, 65535);
-            sshShellStream.DataReceived += SshShellStream_DataReceived;
-            sshShellStream.ErrorOccurred += SshShellStream_ErrorOccurred;
+
         }
 
-        public override void Disconnect()
+        public  void Disconnect()
         {
-            if (!sshClient.IsConnected)
-                return;
             try
             {
-                sshClient.Disconnect();
+                if (sshShellStream != null)
+                {
+                    sshShellStream.DataReceived -= SshShellStream_DataReceived;
+                    sshShellStream.ErrorOccurred -= SshShellStream_ErrorOccurred;
+
+                    sshShellStream.Close();
+                    sshShellStream.Dispose();
+                    sshShellStream = null;
+                }
+
+                if (sshClient != null && sshClient.IsConnected)
+                {
+                    sshClient.Disconnect();
+                }
             }
             catch (SshConnectionException e)
             {
@@ -162,30 +245,47 @@ namespace GeneralHelpers.IPCommunications.SSH
 
         private void SshShellStream_DataReceived(object sender, ShellDataEventArgs e)
         {
-
-            if (e.Data.Length < 1)
-                return;
-
-            using(ShellStream stream = (ShellStream)sender)
+            try
             {
-                StringBuilder data = new StringBuilder();
 
-                while(stream.DataAvailable)
+                if (e.Data.Length < 1)
+                    return;
+
+
+                var encoding = Encoding.ASCII.GetString(e.Data);
+                
+                SendDataReceivedEvent(this, encoding, null);
+
+            }
+            catch (Exception exception)
+            {
+                CrestronConsole.PrintLine($"Error in SSHStreamReturn is: {exception}");
+            }
+
+
+        }
+
+        public  void SendData(string data)
+        {
+            try
+            {
+
+                if (sshShellStream == null || !sshShellStream.CanWrite)
                 {
-                    data.Append(stream.ReadLine());
+                    SendDebug("Cannot write to sshShellStream: Stream is null or disposed.");
+                    return;
                 }
 
-                SendDataReceivedEvent(this,data.ToString(),null);
-            }
-        }
-
-        public override void SendData(string data)
-        {
-            if (sshShellStream.CanWrite)
                 sshShellStream.WriteLine(data);
+            }
+            catch (Exception e)
+            {
+                SendDebug($"SSHClient Error in SendData is(stack trace) : {e.StackTrace}");
+            }
+
         }
 
-        public override void SendData(byte[] data)
+        public  void SendData(byte[] data)
         {
             if (sshShellStream.CanWrite)
             {
@@ -194,14 +294,39 @@ namespace GeneralHelpers.IPCommunications.SSH
             }
         }
 
-        public override void Dispose()
+        public  void Dispose()
         {
-            Disconnect();
-            if(sshClient != null)
+
+            AutoReconnect = false;
+
+            if (connState != null)
             {
+                connState.Stop();
+                connState.Dispose();
+                connState = null;
+            }
+
+            if (sshShellStream != null)
+            {
+                sshShellStream.DataReceived -= SshShellStream_DataReceived;
+                sshShellStream.ErrorOccurred -= SshShellStream_ErrorOccurred;
+                sshShellStream.Close();
+                sshShellStream.Dispose();
+                sshShellStream = null;
+            }
+
+
+            if (sshClient != null)
+            {
+   
+                Disconnect();
+                sshClient.ErrorOccurred -= SshClient_ErrorOccurred;
+                sshClient.HostKeyReceived -= SshClient_HostKeyReceived;
                 sshClient.Dispose();
                 sshClient = null;
             }
+
+
         }
 
 

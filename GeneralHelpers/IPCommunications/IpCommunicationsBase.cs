@@ -110,7 +110,7 @@ namespace GeneralHelpers.IPCommunications
             onDataReceivedEvent?.Invoke(sender, sData, bData);
         }
 
-        internal void IPAddressChange(string newIpAddress)
+        internal virtual void IPAddressChange(string newIpAddress)
         {
             Disconnect();
             ipAddress = newIpAddress;
@@ -129,9 +129,7 @@ namespace GeneralHelpers.IPCommunications
 
             SendDataReceivedEvent(sender, Encoding.UTF8.GetString(tcpClient.IncomingDataBuffer, 0, bytes), tcpClient.IncomingDataBuffer);
         }
-
-
-
+        
         internal virtual void SetUserName(string user)
         {
             if (string.IsNullOrEmpty(userName))
@@ -153,19 +151,19 @@ namespace GeneralHelpers.IPCommunications
             SendStatusChangeEvent(this, tcpClient.ClientStatus.ToString(), IsConnected);
             if (isConnected)
             {
-                int dataAsync = (int)tcpClient.ReceiveDataAsync(DataReceivedCallback);
+                int dataAsync = (int)myTCPClient.ReceiveDataAsync(DataReceivedCallback);
             }
         }
         internal void ConnectionStateCallback(TCPClient _tcpClient)
         {
             isConnected = tcpClient.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED;
 
-            SendStatusChangeEvent(this, tcpClient.ClientStatus.ToString(), IsConnected);
-
-            if (tcpClient.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
-            {
-                int dataAsync = (int)tcpClient.ReceiveDataAsync(DataReceivedCallback);
-            }
+            SendStatusChangeEvent(this, _tcpClient.ClientStatus.ToString(), IsConnected);
+            int dataAsync = (int)_tcpClient.ReceiveDataAsync(DataReceivedCallback);
+            //if (tcpClient.ClientStatus == SocketStatus.SOCKET_STATUS_CONNECTED)
+            //{
+                
+            //}
 
         }
 
